@@ -109,6 +109,30 @@ public class AuthController : ControllerBase
         });
     }
 
+    //POST: api/auth/logout
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<ActionResult<LogoutResponse>> Logout()
+    {
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int userId))
+        {
+            return Unauthorized(new { message = "User not authenticated." });
+        }
+
+        Response.Cookies.Delete("auth", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict
+        });
+
+        return Ok(new LogoutResponse
+        {
+            IsLoggedIn = false
+        });
+    }
+
     private CookieOptions GetCookieOptions()
     {
         return new CookieOptions

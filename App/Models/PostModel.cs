@@ -1,10 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace App.Models;
 
 public class PostModel
 {
     public int Id { get; set; }
-    public int? ParentPostId { get; set; }
     public required DateTime Published { get; set; }
+
+    [Required, MinLength(3), MaxLength(400)]
     public required string Message { get; set; }
     
 
@@ -13,7 +16,4 @@ public class PostModel
 
     // Posted by User.
     public required UserModel PostedBy { get; set; }
-
-    // Replies to Post.
-    public List<PostModel>? Replies { get; set; }
 }

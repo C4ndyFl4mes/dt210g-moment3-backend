@@ -32,13 +32,8 @@ namespace App.Migrations
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int?>("ParentPostId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PostModelId")
-                        .HasColumnType("int");
+                        .HasMaxLength(400)
+                        .HasColumnType("varchar(400)");
 
                     b.Property<int>("PostedById")
                         .HasColumnType("int");
@@ -50,8 +45,6 @@ namespace App.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PostModelId");
 
                     b.HasIndex("PostedById");
 
@@ -73,14 +66,16 @@ namespace App.Migrations
 
                     b.Property<string>("InitialMessage")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(400)
+                        .HasColumnType("varchar(400)");
 
                     b.Property<DateTime>("Published")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("Id");
 
@@ -290,10 +285,6 @@ namespace App.Migrations
 
             modelBuilder.Entity("App.Models.PostModel", b =>
                 {
-                    b.HasOne("App.Models.PostModel", null)
-                        .WithMany("Replies")
-                        .HasForeignKey("PostModelId");
-
                     b.HasOne("App.Models.UserModel", "PostedBy")
                         .WithMany("Posts")
                         .HasForeignKey("PostedById")
@@ -371,11 +362,6 @@ namespace App.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("App.Models.PostModel", b =>
-                {
-                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("App.Models.ThreadModel", b =>

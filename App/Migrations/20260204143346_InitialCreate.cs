@@ -196,10 +196,10 @@ namespace App.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Title = table.Column<string>(type: "longtext", nullable: false)
+                    Title = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Published = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    InitialMessage = table.Column<string>(type: "longtext", nullable: false)
+                    InitialMessage = table.Column<string>(type: "varchar(400)", maxLength: 400, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedById = table.Column<int>(type: "int", nullable: false)
                 },
@@ -221,13 +221,11 @@ namespace App.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    ParentPostId = table.Column<int>(type: "int", nullable: true),
                     Published = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Message = table.Column<string>(type: "longtext", nullable: false)
+                    Message = table.Column<string>(type: "varchar(400)", maxLength: 400, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PostedOnId = table.Column<int>(type: "int", nullable: false),
-                    PostedById = table.Column<int>(type: "int", nullable: false),
-                    PostModelId = table.Column<int>(type: "int", nullable: true)
+                    PostedById = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -238,11 +236,6 @@ namespace App.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Posts_Posts_PostModelId",
-                        column: x => x.PostModelId,
-                        principalTable: "Posts",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Posts_Threads_PostedOnId",
                         column: x => x.PostedOnId,
@@ -298,11 +291,6 @@ namespace App.Migrations
                 name: "IX_Posts_PostedOnId",
                 table: "Posts",
                 column: "PostedOnId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Posts_PostModelId",
-                table: "Posts",
-                column: "PostModelId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Threads_CreatedById",
