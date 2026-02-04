@@ -2,6 +2,7 @@ using App.Data;
 using App.DTOs;
 using App.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +14,12 @@ namespace App.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly UserManager<UserModel> _userManager;
 
-    public AdminController(ApplicationDbContext context)
+    public AdminController(ApplicationDbContext context, UserManager<UserModel> userManager)
     {
         _context = context;
+        _userManager = userManager;
     }
 
     // GET: api/admin/users/all
@@ -25,13 +28,24 @@ public class AdminController : ControllerBase
     {
         List<UserModel> users = await _context.Users.ToListAsync();
 
-        AllUsersResponse response = new AllUsersResponse
+        List<AuthResponse> userResponses = new List<AuthResponse>();
+
+        foreach (var user in users)
         {
-            Users = users.Select(user => new AuthResponse
+            var roles = await _userManager.GetRolesAsync(user);
+            string role = roles.FirstOrDefault() ?? "None";
+
+            userResponses.Add(new AuthResponse
             {
                 UserId = user.Id,
-                Username = user.UserName!
-            }).ToList()
+                Username = user.UserName!,
+                Role = role
+            });
+        }
+
+        AllUsersResponse response = new AllUsersResponse
+        {
+            Users = userResponses
         };
 
         return Ok(response);

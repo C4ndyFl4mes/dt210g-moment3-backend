@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using App.Data;
 using App.DTOs;
 using App.Models;
 using App.Services;
@@ -12,15 +13,17 @@ namespace App.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
+    private readonly ApplicationDbContext _context;
     private readonly UserManager<UserModel> _userManager;
     private readonly SignInManager<UserModel> _signInManager;
     private readonly TokenService _tokenService;
 
-    public AuthController(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, TokenService tokenService)
+    public AuthController(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, TokenService tokenService, ApplicationDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
+        _context = context;
     }
 
     // POST: api/auth/register
@@ -51,10 +54,15 @@ public class AuthController : ControllerBase
         IdentityResult result = await _userManager.CreateAsync(newUser, request.Password);
         if (!result.Succeeded)
         {
-            return BadRequest(new { nessage = "Registration failed", errors = result.Errors });
+            return BadRequest(new { message = "Registration failed", errors = result.Errors });
         }
 
-        await _userManager.AddToRoleAsync(newUser, "Member");
+        IdentityResult roleResult = await _userManager.AddToRoleAsync(newUser, "Member");
+        if (!roleResult.Succeeded)
+        {
+            await _userManager.DeleteAsync(newUser);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Failed to assign role." });
+        }
 
         List<Claim> claims = new List<Claim>
         {
@@ -70,7 +78,8 @@ public class AuthController : ControllerBase
         return Ok(new AuthResponse
         {
             UserId = newUser.Id,
-            Username = newUser.UserName!
+            Username = newUser.UserName!,
+            Role = "Member"
         });
     }
 
@@ -95,13 +104,20 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Invalid credentials." });
         }
 
+        var roles = await _userManager.GetRolesAsync(user);
+        if (roles == null || roles.Count == 0)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "User has no assigned role." });
+        }
+
+        string userRole = roles.First();
+
         List<Claim> claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.UserName!)
         };
 
-        var roles = await _userManager.GetRolesAsync(user);
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
@@ -114,7 +130,8 @@ public class AuthController : ControllerBase
         return Ok(new AuthResponse
         {
             UserId = user.Id,
-            Username = user.UserName!
+            Username = user.UserName!,
+            Role = userRole
         });
     }
 
@@ -140,6 +157,42 @@ public class AuthController : ControllerBase
         {
             IsLoggedIn = false
         });
+    }
+
+    // POST: api/auth/guard
+    [Authorize]
+    [HttpPost("guard")]
+    public async Task<ActionResult<GuardResponse>> Guard()
+    {
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int userId))
+        {
+            return Unauthorized(new { message = "User not authenticated." });
+        }
+
+        UserModel? user = await _context.Users.FindAsync(userId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "User does not exist." });
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        string role = roles.FirstOrDefault() ?? "None";
+
+        if (role == "Admin")
+        {
+            return Ok(new GuardResponse
+            {
+                IsAdmin = true
+            });
+        }
+        else
+        {
+            return Unauthorized(new GuardResponse{
+                IsAdmin = false
+            });
+        }
     }
 
     private CookieOptions GetCookieOptions()
