@@ -54,10 +54,13 @@ public class AuthController : ControllerBase
             return BadRequest(new { nessage = "Registration failed", errors = result.Errors });
         }
 
+        await _userManager.AddToRoleAsync(newUser, "Member");
+
         List<Claim> claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, newUser.Id.ToString()),
-            new Claim(ClaimTypes.Name, newUser.UserName!)
+            new Claim(ClaimTypes.Name, newUser.UserName!),
+            new Claim(ClaimTypes.Role, "Member")
         };
 
         string token = _tokenService.GenerateAccessToken(claims);
@@ -97,6 +100,12 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.UserName!)
         };
+
+        var roles = await _userManager.GetRolesAsync(user);
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         string token = _tokenService.GenerateAccessToken(claims);
 

@@ -25,6 +25,26 @@ public class PostsController : ControllerBase
         _context = context;
     }
 
+    // GET: api/posts/all
+    [HttpGet("all")]
+    public async Task<ActionResult<AllPostsResponse>> GetAllPosts()
+    {
+        List<PostModel> posts = await _context.Posts.Include(p => p.PostedBy).ToListAsync();
+
+        AllPostsResponse response = new AllPostsResponse
+        {
+            Posts = posts.Select(post => new PostResponse
+            {
+                PostId = post.Id,
+                Published = post.Published,
+                Message = post.Message,
+                Username = post.PostedBy.UserName!
+            }).ToList()
+        };
+
+        return Ok(response);
+    }
+
     // GET: api/posts/thread/:id
     [HttpGet("thread/{id}")]
     public async Task<ActionResult<ThreadPostsPaginatedResponse>> GetPostsFromThread(PaginateRequest request, int id)
