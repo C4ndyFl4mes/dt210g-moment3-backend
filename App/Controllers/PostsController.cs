@@ -47,58 +47,57 @@ public class PostsController : ControllerBase
 
     // GET: api/posts/thread/:id
     [HttpGet("thread/{id}")]
-    public async Task<ActionResult<ThreadPostsPaginatedResponse>> GetPostsFromThread(PaginateRequest request, int id)
+    public async Task<ActionResult<ThreadPostsPaginatedResponse>> GetPostsFromThread(int id, [FromQuery] int perPage = 10, [FromQuery] int currentPage = 1)
+{
+    int totalPosts = await _context.Posts.Where(post => post.PostedOn.Id == id).CountAsync();
+
+    if (totalPosts == 0)
     {
-
-        int totalPosts = await _context.Posts.Where(post => post.PostedOn.Id == id).CountAsync();
-
-        if (totalPosts == 0)
-        {
-            return NotFound(new { message = "No posts found." });
-        }
-
-        int totalPages = (int)Math.Ceiling((double)totalPosts / request.perPage);
-
-        if (request.currentPage < 1 || request.currentPage > totalPages)
-        {
-            return BadRequest(new { message = "Invalid page number." });
-        }
-
-        List<PostResponse> pagedPosts = await _context.Posts
-            .Include(p => p.PostedBy)
-            .Where(post => post.PostedOn.Id == id)
-            .OrderByDescending(post => post.Published)
-            .Skip((request.currentPage - 1) * request.perPage)
-            .Take(request.perPage)
-            .Select(post => new PostResponse
-            {
-                PostId = post.Id,
-                Published = post.Published,
-                Message = post.Message,
-                Username = post.PostedBy.UserName!
-            })
-            .ToListAsync();
-
-        Items items = new Items
-        {
-            PerPage = request.perPage,
-            Count = pagedPosts.Count,
-            Total = totalPosts
-        };
-
-        Pagination pagination = new Pagination
-        {
-            LastPage = totalPages,
-            CurrentPage = request.currentPage,
-            Items = items
-        };
-
-        return Ok(new ThreadPostsPaginatedResponse
-        {
-            Pagination = pagination,
-            Posts = pagedPosts
-        });
+        return NotFound(new { message = "No posts found." });
     }
+
+    int totalPages = (int)Math.Ceiling((double)totalPosts / perPage);
+
+    if (currentPage < 1 || currentPage > totalPages)
+    {
+        return BadRequest(new { message = "Invalid page number." });
+    }
+
+    List<PostResponse> pagedPosts = await _context.Posts
+        .Include(p => p.PostedBy)
+        .Where(post => post.PostedOn.Id == id)
+        .OrderByDescending(post => post.Published)
+        .Skip((currentPage - 1) * perPage)
+        .Take(perPage)
+        .Select(post => new PostResponse
+        {
+            PostId = post.Id,
+            Published = post.Published,
+            Message = post.Message,
+            Username = post.PostedBy.UserName!
+        })
+        .ToListAsync();
+
+    Items items = new Items
+    {
+        PerPage = perPage,
+        Count = pagedPosts.Count,
+        Total = totalPosts
+    };
+
+    Pagination pagination = new Pagination
+    {
+        LastPage = totalPages,
+        CurrentPage = currentPage,
+        Items = items
+    };
+
+    return Ok(new ThreadPostsPaginatedResponse
+    {
+        Pagination = pagination,
+        Posts = pagedPosts
+    });
+}
 
     // POST: api/posts/thread/:id
     [Authorize]
