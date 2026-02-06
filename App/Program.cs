@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Configuration;
 using System.Text;
 using App.Data;
@@ -19,6 +20,17 @@ if (env.IsDevelopment())
 }
 
 builder.Configuration.AddEnvironmentVariables();
+
+Console.WriteLine($"MYSQLHOST: {Environment.GetEnvironmentVariable("MYSQLHOST")}");
+Console.WriteLine($"MYSQL_HOST: {Environment.GetEnvironmentVariable("MYSQL_HOST")}");
+Console.WriteLine("Available env vars containing MYSQL:");
+foreach (DictionaryEntry envVar in Environment.GetEnvironmentVariables())
+{
+    if (envVar.Key.ToString().Contains("MYSQL", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.WriteLine($"  {envVar.Key}: {(envVar.Key.ToString().ToUpper().Contains("PASSWORD") ? "***" : envVar.Value)}");
+    }
+}
 
 var connectionString = Environment.GetEnvironmentVariable("MYSQL_URL");
 if (string.IsNullOrEmpty(connectionString))
