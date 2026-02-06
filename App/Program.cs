@@ -11,19 +11,13 @@ using Microsoft.IdentityModel.Tokens;
 
 DotNetEnv.Env.Load();
 
-System.Console.WriteLine("Starting application... DEBUG");
-
 var builder = WebApplication.CreateBuilder(args);
-
-System.Console.WriteLine("Configuring services... DEBUG CREATEBUILDER");
 
 var env = builder.Environment;
 if (env.IsDevelopment())
 {
     builder.Configuration.AddEnvironmentVariables();
 }
-
-System.Console.WriteLine("Environment variables loaded... DEBUG ENV");
 
 var host = Environment.GetEnvironmentVariable("MYSQLHOST")
     ?? throw new Exception("MYSQLHOST not set");
@@ -40,9 +34,7 @@ var user = Environment.GetEnvironmentVariable("MYSQLUSER")
 var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
     ?? throw new Exception("MYSQL_PASSWORD not set");
 
-var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};";
-
-System.Console.WriteLine($"Connection string constructed... DEBUG CONNECTIONSTRING: {connectionString}...");
+var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Required;";
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
