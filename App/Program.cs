@@ -36,6 +36,8 @@ var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
 
 var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Required;";
 
+// System.Console.WriteLine($"Connection string constructed... DEBUG CONNECTIONSTRING: {connectionString}...");
+
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -92,6 +94,22 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        Console.WriteLine("Applying database migrations...");
+        await dbContext.Database.MigrateAsync();
+        Console.WriteLine("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error applying migrations: {ex.Message}");
+        throw;
+    }
+}
 
 using (var scope = app.Services.CreateScope())
 {
