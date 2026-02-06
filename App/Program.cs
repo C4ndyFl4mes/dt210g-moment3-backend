@@ -21,17 +21,6 @@ if (env.IsDevelopment())
 
 builder.Configuration.AddEnvironmentVariables();
 
-Console.WriteLine($"MYSQLHOST: {Environment.GetEnvironmentVariable("MYSQLHOST")}");
-Console.WriteLine($"MYSQL_HOST: {Environment.GetEnvironmentVariable("MYSQL_HOST")}");
-Console.WriteLine("Available env vars containing MYSQL:");
-foreach (DictionaryEntry envVar in Environment.GetEnvironmentVariables())
-{
-    if (envVar.Key.ToString().Contains("MYSQL", StringComparison.OrdinalIgnoreCase))
-    {
-        Console.WriteLine($"  {envVar.Key}: {(envVar.Key.ToString().ToUpper().Contains("PASSWORD") ? "***" : envVar.Value)}");
-    }
-}
-
 var connectionString = Environment.GetEnvironmentVariable("MYSQL_URL");
 if (string.IsNullOrEmpty(connectionString))
 {
@@ -48,8 +37,6 @@ if (string.IsNullOrEmpty(connectionString))
     
     connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Required;";
 }
-
-System.Console.WriteLine($"Connection string constructed... DEBUG CONNECTIONSTRING: {connectionString}...");
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
