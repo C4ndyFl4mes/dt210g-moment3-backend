@@ -28,17 +28,17 @@ var port = Environment.GetEnvironmentVariable("MYSQLPORT")
     ?? "3306";
 
 var database = Environment.GetEnvironmentVariable("MYSQLDATABASE")
-    ?? throw new Exception("MYSQL_DATABASE not set");
+    ?? throw new Exception("MYSQLDATABASE not set");
 
 var user = Environment.GetEnvironmentVariable("MYSQLUSER")
-    ?? throw new Exception("MYSQL_USER not set");
+    ?? throw new Exception("MYSQLUSER not set");
 
 var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
-    ?? throw new Exception("MYSQL_PASSWORD not set");
+    ?? throw new Exception("MYSQLPASSWORD not set");
 
 var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Required;";
 
-// System.Console.WriteLine($"Connection string constructed... DEBUG CONNECTIONSTRING: {connectionString}...");
+System.Console.WriteLine($"Connection string constructed... DEBUG CONNECTIONSTRING: {connectionString}...");
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
