@@ -46,7 +46,7 @@ if (string.IsNullOrEmpty(connectionString))
     var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
         ?? throw new Exception("MYSQLPASSWORD not set");
     
-    connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Preferred;";
+    connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Required;Trust Server Certificate=true;";
 }
 
 System.Console.WriteLine($"Connection string constructed... DEBUG CONNECTIONSTRING: {connectionString}...");
