@@ -9,15 +9,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 var env = builder.Environment;
 if (env.IsDevelopment())
 {
-    builder.Configuration.AddEnvironmentVariables();
+    DotNetEnv.Env.Load();
 }
+
+builder.Configuration.AddEnvironmentVariables();
+
 
 var host = Environment.GetEnvironmentVariable("MYSQLHOST")
     ?? throw new Exception("MYSQLHOST not set");
