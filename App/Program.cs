@@ -36,7 +36,7 @@ var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
 
 var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};";
 
-
+System.Console.WriteLine(connectionString);
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
