@@ -20,23 +20,22 @@ if (env.IsDevelopment())
 
 builder.Configuration.AddEnvironmentVariables();
 
-
-var host = Environment.GetEnvironmentVariable("MYSQLHOST")
-    ?? throw new Exception("MYSQLHOST not set");
-
-var port = Environment.GetEnvironmentVariable("MYSQLPORT")
-    ?? "3306";
-
-var database = Environment.GetEnvironmentVariable("MYSQLDATABASE")
-    ?? throw new Exception("MYSQLDATABASE not set");
-
-var user = Environment.GetEnvironmentVariable("MYSQLUSER")
-    ?? throw new Exception("MYSQLUSER not set");
-
-var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
-    ?? throw new Exception("MYSQLPASSWORD not set");
-
-var connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Required;";
+var connectionString = Environment.GetEnvironmentVariable("MYSQL_URL");
+if (string.IsNullOrEmpty(connectionString))
+{
+    // Fallback: construct manually
+    var host = Environment.GetEnvironmentVariable("MYSQLHOST")
+        ?? throw new Exception("MYSQLHOST not set");
+    var port = Environment.GetEnvironmentVariable("MYSQLPORT") ?? "3306";
+    var database = Environment.GetEnvironmentVariable("MYSQLDATABASE")
+        ?? throw new Exception("MYSQLDATABASE not set");
+    var user = Environment.GetEnvironmentVariable("MYSQLUSER")
+        ?? throw new Exception("MYSQLUSER not set");
+    var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
+        ?? throw new Exception("MYSQLPASSWORD not set");
+    
+    connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Preferred;";
+}
 
 System.Console.WriteLine($"Connection string constructed... DEBUG CONNECTIONSTRING: {connectionString}...");
 
