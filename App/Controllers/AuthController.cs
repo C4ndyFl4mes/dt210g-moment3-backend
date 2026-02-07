@@ -195,6 +195,34 @@ public class AuthController : ControllerBase
         }
     }
 
+    // GET: api/auth/me
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<AuthResponse>> GetCurrentUser()
+    {
+        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int userId))
+        {
+            return Unauthorized(new { message = "User not authenticated." });
+        }
+
+        UserModel? user = await _context.Users.FindAsync(userId);
+        if (user == null)
+        {
+            return NotFound(new { message = "User does not exist." });
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        string role = roles.FirstOrDefault() ?? "Member";
+
+        return Ok(new AuthResponse
+        {
+            UserId = user.Id,
+            Username = user.UserName!,
+            Role = role
+        });
+    }
+
     private CookieOptions GetCookieOptions()
     {
         return new CookieOptions

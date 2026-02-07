@@ -34,7 +34,7 @@ if (string.IsNullOrEmpty(connectionString))
         ?? throw new Exception("MYSQLUSER not set");
     var password = Environment.GetEnvironmentVariable("MYSQLPASSWORD")
         ?? throw new Exception("MYSQLPASSWORD not set");
-    
+
     connectionString = $"Server={host};Port={port};Database={database};User={user};Password={password};SslMode=Required;";
 }
 
@@ -93,6 +93,17 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowCredentials()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -134,6 +145,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 
