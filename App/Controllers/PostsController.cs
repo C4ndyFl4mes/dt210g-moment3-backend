@@ -1,16 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using App.Data;
 using App.Models;
 using App.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Identity.Client;
 
 namespace App.Controllers;
 
@@ -25,113 +19,76 @@ public class PostsController : ControllerBase
         _context = context;
     }
 
-    // GET: api/posts/all
-    [HttpGet("all")]
-    public async Task<ActionResult<AllPostsResponse>> GetAllPosts()
+    // GET: api/posts
+    [HttpGet]
+    public async Task<ActionResult<List<PostResponse>>> GetAllPosts()
     {
-        List<PostModel> posts = await _context.Posts.Include(p => p.PostedBy).ToListAsync();
-
-        AllPostsResponse response = new AllPostsResponse
-        {
-            Posts = posts.Select(post => new PostResponse
+        var posts = await _context.Posts
+            .Include(p => p.Author)
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(post => new PostResponse
             {
                 PostId = post.Id,
-                Published = post.Published,
-                Message = post.Message,
-                Username = post.PostedBy.UserName!
-            }).ToList()
-        };
+                Title = post.Title,
+                Content = post.Content,
+                CreatedAt = post.CreatedAt,
+                AuthorUsername = post.Author.UserName!,
+                AuthorId = post.Author.Id
+            })
+            .ToListAsync();
 
-        return Ok(response);
+        return Ok(posts);
     }
 
-    // GET: api/posts/thread/:id
-    [HttpGet("thread/{id}")]
-    public async Task<ActionResult<ThreadPostsPaginatedResponse>> GetPostsFromThread(int id, [FromQuery] int perPage = 10, [FromQuery] int currentPage = 1)
-{
-    int totalPosts = await _context.Posts.Where(post => post.PostedOn.Id == id).CountAsync();
-
-    if (totalPosts == 0)
+    // GET: api/posts/:id
+    [HttpGet("{id}")]
+    public async Task<ActionResult<PostResponse>> GetPost(int id)
     {
-        return NotFound(new { message = "No posts found." });
-    }
+        var post = await _context.Posts
+            .Include(p => p.Author)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
-    int totalPages = (int)Math.Ceiling((double)totalPosts / perPage);
-
-    if (currentPage < 1 || currentPage > totalPages)
-    {
-        return BadRequest(new { message = "Invalid page number." });
-    }
-
-    List<PostResponse> pagedPosts = await _context.Posts
-        .Include(p => p.PostedBy)
-        .Where(post => post.PostedOn.Id == id)
-        .OrderByDescending(post => post.Published)
-        .Skip((currentPage - 1) * perPage)
-        .Take(perPage)
-        .Select(post => new PostResponse
+        if (post == null)
         {
-            PostId = post.Id,
-            Published = post.Published,
-            Message = post.Message,
-            Username = post.PostedBy.UserName!
-        })
-        .ToListAsync();
-
-    Items items = new Items
-    {
-        PerPage = perPage,
-        Count = pagedPosts.Count,
-        Total = totalPosts
-    };
-
-    Pagination pagination = new Pagination
-    {
-        LastPage = totalPages,
-        CurrentPage = currentPage,
-        Items = items
-    };
-
-    return Ok(new ThreadPostsPaginatedResponse
-    {
-        Pagination = pagination,
-        Posts = pagedPosts
-    });
-}
-
-    // POST: api/posts/thread/:id
-    [Authorize]
-    [HttpPost("thread/{id}")]
-    public async Task<ActionResult<PostPostedResponse>> PostAPost(PostRequest request, int id)
-    {
-        ThreadModel? postedOn = await _context.Threads.Where(thread => thread.Id == id).FirstOrDefaultAsync();
-
-        if (postedOn == null)
-        {
-            return BadRequest(new { message = "Cannot publish post on a thread that does not exist." });
+            return NotFound(new { message = "Post not found." });
         }
 
-        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Ok(new PostResponse
+        {
+            PostId = post.Id,
+            Title = post.Title,
+            Content = post.Content,
+            CreatedAt = post.CreatedAt,
+            AuthorUsername = post.Author.UserName!,
+            AuthorId = post.Author.Id
+        });
+    }
+
+    // POST: api/posts
+    [Authorize]
+    [HttpPost]
+    public async Task<ActionResult<PostResponse>> CreatePost(PostRequest request)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int userId))
         {
             return Unauthorized(new { message = "User not authenticated." });
         }
 
-        UserModel? postedBy = await _context.Users.FindAsync(userId);
-
-        if (postedBy == null)
+        var author = await _context.Users.FindAsync(userId);
+        if (author == null)
         {
-            return BadRequest(new { message = "A user that does not exist cannot publish a post." });
+            return BadRequest(new { message = "User not found." });
         }
 
-        PostModel post = new PostModel
+        var post = new PostModel
         {
-            Message = request.Message,
-            PostedBy = postedBy,
-            PostedOn = postedOn,
-            Published = DateTime.Now
+            Title = request.Title,
+            Content = request.Content,
+            CreatedAt = DateTime.Now,
+            Author = author,
+            AuthorId = userId
         };
-
 
         _context.Posts.Add(post);
 
@@ -143,97 +100,88 @@ public class PostsController : ControllerBase
         {
             return BadRequest(new { message = "An error occurred while saving the post.", error = ex.Message });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An unexpected error occurred.", error = ex.Message });
-        }
 
-        return Ok(new PostPostedResponse
+        return CreatedAtAction(nameof(GetPost), new { id = post.Id }, new PostResponse
         {
             PostId = post.Id,
-            Published = post.Published,
-            Message = post.Message,
-            ThreadId = post.PostedOn.Id,
-            Username = post.PostedBy.UserName!
+            Title = post.Title,
+            Content = post.Content,
+            CreatedAt = post.CreatedAt,
+            AuthorUsername = post.Author.UserName!,
+            AuthorId = post.Author.Id
         });
     }
 
-    // PUT: api/posts/post/:id
+    // PUT: api/posts/:id
     [Authorize]
-    [HttpPut("post/{id}")]
-    public async Task<ActionResult<UpdatePostResponse>> UpdatePost(UpdatePostRequest request, int id)
+    [HttpPut("{id}")]
+    public async Task<ActionResult<PostResponse>> UpdatePost(int id, PostRequest request)
     {
-        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int userId))
         {
             return Unauthorized(new { message = "User not authenticated." });
         }
 
-        PostModel? oldPost = await _context.Posts.Include(p => p.PostedBy).Where(post => post.Id == id).FirstOrDefaultAsync();
+        var post = await _context.Posts
+            .Include(p => p.Author)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
-        if (oldPost == null)
+        if (post == null)
         {
-            return NotFound(new { message = "Cannot edit post that does not exist." });
+            return NotFound(new { message = "Post not found." });
         }
 
-        if (oldPost.PostedBy.Id != userId)
+        if (post.AuthorId != userId)
         {
-            return Unauthorized(new { message = "You cannot edit a post that belongs to another user." });
+            return Forbid();
         }
 
-        oldPost.Message = request.Message;
+        post.Title = request.Title;
+        post.Content = request.Content;
 
         try
         {
             await _context.SaveChangesAsync();
         }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!PostModelExists(id))
-            {
-                return NotFound(new { message = "Cannot edit post that does not exist." });
-            }
-            return StatusCode(500, new { message = "A concurrency error occurred while updating the post." });
-        }
         catch (DbUpdateException ex)
         {
-            return BadRequest(new { message = "Database error while updating post.", error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An unexpected error occurred.", error = ex.Message });
+            return BadRequest(new { message = "An error occurred while updating the post.", error = ex.Message });
         }
 
-        return Ok(new UpdatePostResponse
+        return Ok(new PostResponse
         {
-            PostId = oldPost.Id,
-            Message = oldPost.Message
+            PostId = post.Id,
+            Title = post.Title,
+            Content = post.Content,
+            CreatedAt = post.CreatedAt,
+            AuthorUsername = post.Author.UserName!,
+            AuthorId = post.Author.Id
         });
     }
 
-    // DELETE: api/posts/post/:id
+    // DELETE: api/posts/:id
     [Authorize]
-    [HttpDelete("post/{id}")]
-    public async Task<ActionResult<PostDeletedResponse>> DeletePost(int id)
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeletePost(int id)
     {
-        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int userId))
         {
             return Unauthorized(new { message = "User not authenticated." });
         }
 
-        PostModel? post = await _context.Posts.Include(p => p.PostedBy).Where(post => post.Id == id).FirstOrDefaultAsync();
+        var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
 
         if (post == null)
         {
-            return NotFound(new { message = "Cannot delete a post that does not exist." });
+            return NotFound(new { message = "Post not found." });
         }
 
-        if (post.PostedBy.Id != userId)
+        if (post.AuthorId != userId)
         {
-            return Unauthorized(new { message = "You cannot delete a post that belongs to another user." });
+            return Forbid();
         }
-
 
         _context.Posts.Remove(post);
 
@@ -243,22 +191,10 @@ public class PostsController : ControllerBase
         }
         catch (DbUpdateException ex)
         {
-            return BadRequest(new { message = "Database error while deleting a post.", error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An unexpected error occurred.", error = ex.Message });
+            return BadRequest(new { message = "An error occurred while deleting the post.", error = ex.Message });
         }
 
-        return Ok(new PostDeletedResponse
-        {
-            PostId = post.Id
-        });
-    }
-
-    private bool PostModelExists(int id)
-    {
-        return _context.Posts.Any(e => e.Id == id);
+        return NoContent();
     }
 }
 

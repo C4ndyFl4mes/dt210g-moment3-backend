@@ -5,15 +5,16 @@ namespace App.Models;
 public class PostModel
 {
     public int Id { get; set; }
-    public required DateTime Published { get; set; }
 
-    [Required, MinLength(3), MaxLength(400)]
-    public required string Message { get; set; }
-    
+    [Required, MinLength(3), MaxLength(200)]
+    public required string Title { get; set; }
 
-    // Post belongs to Thread.
-    public required ThreadModel PostedOn { get; set; }
+    [Required, MinLength(3)]
+    public required string Content { get; set; }
+
+    public required DateTime CreatedAt { get; set; }
 
     // Posted by User.
-    public required UserModel PostedBy { get; set; }
+    public required UserModel Author { get; set; }
+    public required int AuthorId { get; set; }
 }

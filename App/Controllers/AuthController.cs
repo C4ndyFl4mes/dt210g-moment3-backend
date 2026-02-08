@@ -135,7 +135,7 @@ public class AuthController : ControllerBase
         });
     }
 
-    //POST: api/auth/logout
+    // POST: api/auth/logout
     [Authorize]
     [HttpPost("logout")]
     public async Task<ActionResult<LogoutResponse>> Logout()
@@ -157,42 +157,6 @@ public class AuthController : ControllerBase
         {
             IsLoggedIn = false
         });
-    }
-
-    // POST: api/auth/guard
-    [Authorize]
-    [HttpPost("guard")]
-    public async Task<ActionResult<GuardResponse>> Guard()
-    {
-        string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(userIdValue) || !int.TryParse(userIdValue, out int userId))
-        {
-            return Unauthorized(new { message = "User not authenticated." });
-        }
-
-        UserModel? user = await _context.Users.FindAsync(userId);
-
-        if (user == null)
-        {
-            return NotFound(new { message = "User does not exist." });
-        }
-
-        var roles = await _userManager.GetRolesAsync(user);
-        string role = roles.FirstOrDefault() ?? "None";
-
-        if (role == "Admin")
-        {
-            return Ok(new GuardResponse
-            {
-                IsAdmin = true
-            });
-        }
-        else
-        {
-            return Unauthorized(new GuardResponse{
-                IsAdmin = false
-            });
-        }
     }
 
     // GET: api/auth/me

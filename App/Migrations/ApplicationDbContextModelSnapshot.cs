@@ -30,58 +30,26 @@ namespace App.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Message")
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
                         .IsRequired()
-                        .HasMaxLength(400)
-                        .HasColumnType("varchar(400)");
+                        .HasColumnType("longtext");
 
-                    b.Property<int>("PostedById")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PostedOnId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Published")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostedById");
-
-                    b.HasIndex("PostedOnId");
-
-                    b.ToTable("Posts");
-                });
-
-            modelBuilder.Entity("App.Models.ThreadModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("int");
-
-                    b.Property<string>("InitialMessage")
-                        .IsRequired()
-                        .HasMaxLength(400)
-                        .HasColumnType("varchar(400)");
-
-                    b.Property<DateTime>("Published")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedById");
+                    b.HasIndex("AuthorId");
 
-                    b.ToTable("Threads");
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("App.Models.UserModel", b =>
@@ -285,32 +253,13 @@ namespace App.Migrations
 
             modelBuilder.Entity("App.Models.PostModel", b =>
                 {
-                    b.HasOne("App.Models.UserModel", "PostedBy")
+                    b.HasOne("App.Models.UserModel", "Author")
                         .WithMany("Posts")
-                        .HasForeignKey("PostedById")
+                        .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("App.Models.ThreadModel", "PostedOn")
-                        .WithMany("Posts")
-                        .HasForeignKey("PostedOnId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PostedBy");
-
-                    b.Navigation("PostedOn");
-                });
-
-            modelBuilder.Entity("App.Models.ThreadModel", b =>
-                {
-                    b.HasOne("App.Models.UserModel", "CreatedBy")
-                        .WithMany("Threads")
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
+                    b.Navigation("Author");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -364,16 +313,9 @@ namespace App.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("App.Models.ThreadModel", b =>
-                {
-                    b.Navigation("Posts");
-                });
-
             modelBuilder.Entity("App.Models.UserModel", b =>
                 {
                     b.Navigation("Posts");
-
-                    b.Navigation("Threads");
                 });
 #pragma warning restore 612, 618
         }

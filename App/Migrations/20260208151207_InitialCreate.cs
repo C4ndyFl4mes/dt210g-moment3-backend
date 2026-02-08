@@ -191,55 +191,25 @@ namespace App.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Threads",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Title = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Published = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    InitialMessage = table.Column<string>(type: "varchar(400)", maxLength: 400, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedById = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Threads", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Threads_AspNetUsers_CreatedById",
-                        column: x => x.CreatedById,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "Posts",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Published = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Message = table.Column<string>(type: "varchar(400)", maxLength: 400, nullable: false)
+                    Title = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    PostedOnId = table.Column<int>(type: "int", nullable: false),
-                    PostedById = table.Column<int>(type: "int", nullable: false)
+                    Content = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    AuthorId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Posts", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Posts_AspNetUsers_PostedById",
-                        column: x => x.PostedById,
+                        name: "FK_Posts_AspNetUsers_AuthorId",
+                        column: x => x.AuthorId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Posts_Threads_PostedOnId",
-                        column: x => x.PostedOnId,
-                        principalTable: "Threads",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
@@ -283,19 +253,9 @@ namespace App.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Posts_PostedById",
+                name: "IX_Posts_AuthorId",
                 table: "Posts",
-                column: "PostedById");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Posts_PostedOnId",
-                table: "Posts",
-                column: "PostedOnId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Threads_CreatedById",
-                table: "Threads",
-                column: "CreatedById");
+                column: "AuthorId");
         }
 
         /// <inheritdoc />
@@ -321,9 +281,6 @@ namespace App.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
-
-            migrationBuilder.DropTable(
-                name: "Threads");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

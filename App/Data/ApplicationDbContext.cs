@@ -9,6 +9,5 @@ public class ApplicationDbContext : IdentityDbContext<UserModel, IdentityRole<in
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-    public DbSet<ThreadModel> Threads { get; set; }
     public DbSet<PostModel> Posts { get; set; }
 }
