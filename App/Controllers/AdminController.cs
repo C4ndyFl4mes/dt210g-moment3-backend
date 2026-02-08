@@ -51,11 +51,11 @@ public class AdminController : ControllerBase
         return Ok(response);
     }
 
-    // DELETE: api/admin/ban/:id
-    [HttpDelete("ban/{id}")]
-    public async Task<ActionResult<BanUserResponse>> BanUser(int id)
+    // DELETE: api/admin/ban/:username
+    [HttpDelete("ban/{username}")]
+    public async Task<ActionResult<BanUserResponse>> BanUser(string username)
     {
-        UserModel? user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        UserModel? user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
 
         if (user == null)
         {
@@ -65,11 +65,11 @@ public class AdminController : ControllerBase
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
         await _context.Posts
-            .Where(post => post.PostedBy.Id == id || post.PostedOn.CreatedBy.Id == id)
+            .Where(post => post.PostedBy.Id == user.Id || post.PostedOn.CreatedBy.Id == user.Id)
             .ExecuteDeleteAsync();
 
         await _context.Threads
-            .Where(thread => thread.CreatedBy.Id == id)
+            .Where(thread => thread.CreatedBy.Id == user.Id)
             .ExecuteDeleteAsync();
 
         _context.Users.Remove(user);
@@ -87,7 +87,7 @@ public class AdminController : ControllerBase
 
         BanUserResponse response = new BanUserResponse
         {
-            UserId = id
+            UserId = user.Id
         };
 
         return Ok(response);
