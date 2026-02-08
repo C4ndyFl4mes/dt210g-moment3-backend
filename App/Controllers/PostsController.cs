@@ -129,7 +129,7 @@ public class PostsController : ControllerBase
             Message = request.Message,
             PostedBy = postedBy,
             PostedOn = postedOn,
-            Published = DateTime.UtcNow
+            Published = DateTime.Now
         };
 
 

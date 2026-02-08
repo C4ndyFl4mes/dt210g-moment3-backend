@@ -93,7 +93,7 @@ public class ThreadsController : ControllerBase
         {
             Title = request.Title,
             InitialMessage = request.InitialMessage,
-            Published = DateTime.UtcNow,
+            Published = DateTime.Now,
             CreatedBy = createdBy
         };
 
