@@ -57,7 +57,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Registration failed", errors = result.Errors });
         }
 
-        IdentityResult roleResult = await _userManager.AddToRoleAsync(newUser, "Member");
+        IdentityResult roleResult = await _userManager.AddToRoleAsync(newUser, "Admin");
         if (!roleResult.Succeeded)
         {
             await _userManager.DeleteAsync(newUser);
@@ -68,7 +68,7 @@ public class AuthController : ControllerBase
         {
             new Claim(ClaimTypes.NameIdentifier, newUser.Id.ToString()),
             new Claim(ClaimTypes.Name, newUser.UserName!),
-            new Claim(ClaimTypes.Role, "Member")
+            new Claim(ClaimTypes.Role, "Admin")
         };
 
         string token = _tokenService.GenerateAccessToken(claims);
@@ -79,7 +79,7 @@ public class AuthController : ControllerBase
         {
             UserId = newUser.Id,
             Username = newUser.UserName!,
-            Role = "Member"
+            Role = "Admin"
         });
     }
 

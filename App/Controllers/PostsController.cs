@@ -171,16 +171,16 @@ public class PostsController : ControllerBase
             return Unauthorized(new { message = "User not authenticated." });
         }
 
-        var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
+        var post = await _context.Posts.Include(p => p.Author).FirstOrDefaultAsync(p => p.Id == id);
 
         if (post == null)
         {
             return NotFound(new { message = "Post not found." });
         }
 
-        if (post.AuthorId != userId)
+        if (post.AuthorId != userId && !User.IsInRole("Admin"))
         {
-            return Forbid();
+            return StatusCode(403, new { message = "You are not allowed to delete another user's post." });
         }
 
         _context.Posts.Remove(post);
@@ -194,7 +194,15 @@ public class PostsController : ControllerBase
             return BadRequest(new { message = "An error occurred while deleting the post.", error = ex.Message });
         }
 
-        return NoContent();
+        return Ok(new PostResponse
+        {
+            PostId = post.Id,
+            Title = post.Title,
+            Content = post.Content,
+            CreatedAt = post.CreatedAt,
+            AuthorUsername = post.Author.UserName!,
+            AuthorId = post.Author.Id
+        });
     }
 }
 
