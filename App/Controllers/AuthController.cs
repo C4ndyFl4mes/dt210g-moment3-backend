@@ -193,7 +193,7 @@ public class AuthController : ControllerBase
         {
             HttpOnly = true,
             Secure = true,  // Set to true in production with HTTPS
-            SameSite = SameSiteMode.Strict,
+            SameSite = SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.AddHours(1)
         };
     }
